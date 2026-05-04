@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Huevos App PRO</title>
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Huevos%20App%20PRO%22,%22short_name%22:%22HuevosApp%22,%22start_url%22:%22index.html%22,%22display%22:%22standalone%22,%22theme_color%22:%22%23f39c12%22}">
+    <style>
+        :root { --p: #f39c12; --danger: #e74c3c; --success: #2ecc71; --bg: #f4f7f6; --dark: #2c3e50; }
+        body { font-family: sans-serif; margin: 0; background: var(--bg); padding-bottom: 90px; color: var(--dark); }
+        header { background: #222; color: #fff; text-align: center; padding: 15px; font-weight: bold; font-size: 1.2rem; }
+        .container { padding: 10px; max-width: 600px; margin: auto; }
+        .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h3 { margin: 0 0 10px 0; border-bottom: 2px solid var(--p); display: inline-block; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { padding: 14px; border: none; width: 100%; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #fff; border-top: 1px solid #ddd; height: 70px; }
+        .nav div { flex: 1; text-align: center; padding: 12px 2px; font-size: 10px; font-weight: bold; color: #777; display: flex; flex-direction: column; justify-content: center; }
+        .nav div.active { color: var(--p); border-top: 4px solid var(--p); }
+        .list-item { background: #fff; margin: 10px 0; padding: 15px; border-left: 6px solid var(--p); border-radius: 8px; }
+        .low-stock { background: #feebeb !important; border: 2px solid var(--danger) !important; color: var(--danger); }
+    </style>
+</head>
+<body>
+<header>🥚 HUEVOS APP PRO</header>
+<div class="container">
+    <div id="v1" class="sec">
+        <div class="card">
+            <h3>🛒 Nueva Venta</h3>
+            <input id="cli" placeholder="Nombre del Cliente">
+            <select id="prd"></select>
+            <input id="ct" type="number" placeholder="Cantidad de Maples">
+            <input id="tot" type="number" placeholder="Monto Total $">
+            <button class="btn" style="background:var(--p)" onclick="fV()">CONFIRMAR VENTA</button>
+        </div>
+    </div>
+    <div id="v2" class="sec" style="display:none"><h3>📋 Pedidos Pendientes</h3><div id="lst"></div></div>
+    <div id="v3" class="sec" style="display:none"><h3>📦 Stock Actual</h3><div id="stk"></div></div>
+    <div id="v4" class="sec" style="display:none">
+        <div class="card">
+            <h3>⚙️ Configurar Productos</h3>
+            <input id="pN" placeholder="Nombre (Ej: Huevos Color)">
+            <input id="pC" type="number" placeholder="Precio x Maple $">
+            <button class="btn" style="background:var(--p)" onclick="aP()">GUARDAR PRODUCTO</button>
+        </div>
+        <div id="pL"></div>
+    </div>
+</div>
+<nav class="nav">
+    <div onclick="nv('v1',this)" class="active">VENTA</div>
+    <div onclick="nv('v2',this)">PEDIDOS</div>
+    <div onclick="nv('v3',this)">STOCK</div>
+    <div onclick="nv('v4',this)">PRECIOS</div>
+</nav>
+<script>
+let db = JSON.parse(localStorage.getItem("db_huevos_gh")) || { p:[], s:{}, i:[] };
+function sv(){ localStorage.setItem("db_huevos_gh", JSON.stringify(db)); rd(); }
+function nv(v,e){
+    document.querySelectorAll('.sec').forEach(x=>x.style.display="none");
+    document.querySelectorAll('.nav div').forEach(x=>x.classList.remove('active'));
+    document.getElementById(v).style.display="block"; e.classList.add('active'); rd();
+}
+function aP(){
+    let n=pN.value.trim(), c=+pC.value; if(!n||!c) return;
+    db.p.push({n,c}); if(db.s[n]===undefined) db.s[n]=0; pN.value=""; pC.value=""; sv();
+}
+function fV(){
+    let c=cli.value.trim(), t=+tot.value, p=prd.value, q=+ct.value;
+    if(!c||!t||!p) return alert("Faltan datos");
+    db.i.unshift({id:Date.now(),c,p,q,t,e:false});
+    cli.value=""; tot.value=""; ct.value=""; sv(); nv('v2', document.querySelectorAll('.nav div')[1]);
+}
+function en(id){
+    let x=db.i.find(a=>a.id==id); db.s[x.p]=(db.s[x.p]||0)-x.q; x.e=true; sv();
+}
+function rd(){
+    prd.innerHTML = db.p.map(p=>`<option value="${p.n}">${p.n}</option>`).join("");
+    lst.innerHTML = db.i.filter(p=>!p.e).map(p=>`<div class="list-item"><b>${p.c}</b><br>${p.p} (${p.q}u) - $${p.t}<br><button class="btn" style="background:var(--success)" onclick="en(${p.id})">ENTREGADO</button></div>`).join("");
+    stk.innerHTML = Object.keys(db.s).map(k=>`<div class="card ${db.s[k]<=3?'low-stock':''}"><b>${k}:</b> ${db.s[k]} maples ${db.s[k]<=3?'<br><small>⚠️ STOCK BAJO</small>':''}</div>`).join("");
+    pL.innerHTML = db.p.map(p=>`<div class="card">${p.n} - $${p.c}</div>`).join("");
+}
+rd();
+</script>
+</body>
+</html>
