@@ -3,83 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Huevos App PRO</title>
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Huevos%20App%20PRO%22,%22short_name%22:%22HuevosApp%22,%22start_url%22:%22index.html%22,%22display%22:%22standalone%22,%22theme_color%22:%22%23f39c12%22}">
+    <title>HUEVOS APP PRO - CONTROL TOTAL</title>
     <style>
-        :root { --p: #f39c12; --danger: #e74c3c; --success: #2ecc71; --bg: #f4f7f6; --dark: #2c3e50; }
-        body { font-family: sans-serif; margin: 0; background: var(--bg); padding-bottom: 90px; color: var(--dark); }
-        header { background: #222; color: #fff; text-align: center; padding: 15px; font-weight: bold; font-size: 1.2rem; }
+        :root { --p: #f39c12; --danger: #e74c3c; --success: #2ecc71; --bg: #f4f7f6; --dark: #2c3e50; --blue: #3498db; }
+        body { font-family: sans-serif; margin: 0; background: var(--bg); padding-bottom: 90px; color: var(--dark); user-select: none; }
+        header { background: #222; color: #fff; text-align: center; padding: 15px; font-weight: bold; position: sticky; top:0; z-index:100; }
         .container { padding: 10px; max-width: 600px; margin: auto; }
         .card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        h3 { margin: 0 0 10px 0; border-bottom: 2px solid var(--p); display: inline-block; }
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #fff; border-top: 1px solid #ddd; height: 75px; z-index:100; overflow-x: auto; }
+        .nav div { flex: 1; min-width: 65px; text-align: center; padding: 10px 2px; font-size: 9px; font-weight: bold; color: #777; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .nav div.active { color: var(--p); border-top: 5px solid var(--p); background: #fdfdfd; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .btn { padding: 14px; border: none; width: 100%; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #fff; border-top: 1px solid #ddd; height: 70px; }
-        .nav div { flex: 1; text-align: center; padding: 12px 2px; font-size: 10px; font-weight: bold; color: #777; display: flex; flex-direction: column; justify-content: center; }
-        .nav div.active { color: var(--p); border-top: 4px solid var(--p); }
+        .btn { padding: 12px; border: none; width: 100%; color: #fff; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-sm { padding: 8px; font-size: 11px; margin: 2px; width: auto; display: inline-block; }
         .list-item { background: #fff; margin: 10px 0; padding: 15px; border-left: 6px solid var(--p); border-radius: 8px; }
         .low-stock { background: #feebeb !important; border: 2px solid var(--danger) !important; color: var(--danger); }
+        .balance-box { display: flex; flex-direction: column; gap: 5px; font-weight: bold; padding: 15px; background: #222; color: #fff; border-radius: 8px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 5px 0; }
+        .hist-item { font-size: 12px; border-bottom: 1px solid #eee; padding: 5px 0; }
     </style>
 </head>
 <body>
-<header>🥚 HUEVOS APP PRO</header>
+
+<header id="headerTitle">🛒 NUEVA VENTA</header>
+
 <div class="container">
     <div id="v1" class="sec">
         <div class="card">
-            <h3>🛒 Nueva Venta</h3>
-            <input id="cli" placeholder="Nombre del Cliente">
-            <select id="prd"></select>
-            <input id="ct" type="number" placeholder="Cantidad de Maples">
-            <input id="tot" type="number" placeholder="Monto Total $">
-            <button class="btn" style="background:var(--p)" onclick="fV()">CONFIRMAR VENTA</button>
+            <h3>Seleccionar Cliente</h3>
+            <select id="vSelCli" onchange="verUltimaCompra()"><option value="">-- Cliente --</option></select>
+            <div id="infoUltima" style="font-size: 12px; color: var(--blue); margin-bottom: 10px;"></div>
+            <hr>
+            <h3>Agregar Productos</h3>
+            <select id="vSelPrd"><option value="">-- Producto --</option></select>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn btn-sm" style="background:#95a5a6" onclick="addCart(1, 'Min')">Min (1)</button>
+                <button class="btn btn-sm" style="background:#95a5a6" onclick="addCart(2, 'Pro')">Pro (2)</button>
+                <button class="btn btn-sm" style="background:#95a5a6" onclick="addCart(12, 'May')">May (12)</button>
+            </div>
+            <input id="vCantManual" type="number" placeholder="O cantidad manual">
+            <button class="btn" style="background:var(--dark)" onclick="addCartManual()">AÑADIR AL CARRITO</button>
+        </div>
+        <div class="card">
+            <h3>Carrito</h3>
+            <div id="cartList"></div>
+            <h4 id="cartTotal">Total: $0</h4>
+            <select id="vPago"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option></select>
+            <button class="btn" style="background:var(--p)" onclick="confirmarPedido()">REGISTRAR PEDIDO</button>
         </div>
     </div>
-    <div id="v2" class="sec" style="display:none"><h3>📋 Pedidos Pendientes</h3><div id="lst"></div></div>
-    <div id="v3" class="sec" style="display:none"><h3>📦 Stock Actual</h3><div id="stk"></div></div>
-    <div id="v4" class="sec" style="display:none">
-        <div class="card">
-            <h3>⚙️ Configurar Productos</h3>
-            <input id="pN" placeholder="Nombre (Ej: Huevos Color)">
-            <input id="pC" type="number" placeholder="Precio x Maple $">
-            <button class="btn" style="background:var(--p)" onclick="aP()">GUARDAR PRODUCTO</button>
+
+    <div id="v2" class="sec" style="display:none">
+        <div class="card"><h3>👥 Nuevo Cliente</h3>
+            <input id="cNom" placeholder="Nombre completo">
+            <input id="cTel" placeholder="WhatsApp">
+            <button class="btn" style="background:var(--p)" onclick="addCli()">GUARDAR CLIENTE</button>
         </div>
-        <div id="pL"></div>
+        <div id="listCli"></div>
+    </div>
+
+    <div id="v3" class="sec" style="display:none">
+        <h3>📋 Pendientes</h3>
+        <div id="listPed"></div>
+    </div>
+
+    <div id="v4" class="sec" style="display:none">
+        <h3>📦 Inventario</h3>
+        <div id="listStk"></div>
+    </div>
+
+    <div id="v5" class="sec" style="display:none">
+        <div class="card"><h3>💸 Registrar Gasto/Compra</h3>
+            <select id="gSelPrd"></select>
+            <input id="gCant" type="number" placeholder="Cantidad que compraste">
+            <input id="gCosto" type="number" placeholder="Costo total pagado $">
+            <select id="gPago"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option></select>
+            <button class="btn" style="background:var(--danger)" onclick="addGasto()">REGISTRAR COMPRA</button>
+        </div>
+        <div id="listGas"></div>
+    </div>
+
+    <div id="v6" class="sec" style="display:none">
+        <div class="card"><h3>💰 Balance</h3>
+            <div class="balance-box">
+                <span>Efectivo: <span id="cEfe">$0</span></span>
+                <span>Transferencia: <span id="cTra">$0</span></span>
+                <hr>
+                <span>TOTAL: <span id="cTotal">$0</span></span>
+            </div>
+        </div>
+        <div class="card"><h3>💾 Backup</h3>
+            <button class="btn" style="background:var(--success)" onclick="exportar()">WHATSAPP BACKUP (Exportar)</button>
+            <button class="btn" style="background:var(--dark)" onclick="importar()">RESTAURAR DATOS</button>
+        </div>
+    </div>
+
+    <div id="v7" class="sec" style="display:none">
+        <h3>📜 Historial de Ventas</h3>
+        <div id="listHist"></div>
+    </div>
+
+    <div id="v8" class="sec" style="display:none">
+        <div class="card"><h3>⚙️ Nuevo/Editar Producto</h3>
+            <input id="pNom" placeholder="Nombre del producto">
+            <input id="pCosto" type="number" placeholder="Precio Costo">
+            <input id="pMin" type="number" placeholder="Precio Minorista">
+            <input id="pPro" type="number" placeholder="Precio Promo">
+            <input id="pMay" type="number" placeholder="Precio Mayorista">
+            <button class="btn" style="background:var(--p)" onclick="addPrd()">GUARDAR / ACTUALIZAR</button>
+        </div>
+        <div id="listPrd"></div>
     </div>
 </div>
+
 <nav class="nav">
-    <div onclick="nv('v1',this)" class="active">VENTA</div>
-    <div onclick="nv('v2',this)">PEDIDOS</div>
-    <div onclick="nv('v3',this)">STOCK</div>
-    <div onclick="nv('v4',this)">PRECIOS</div>
+    <div onclick="ir('v1',this,'🛒 VENTA')" class="active">VENTA</div>
+    <div onclick="ir('v2',this,'👥 CLIENTES')">CLI.</div>
+    <div onclick="ir('v3',this,'📋 PEDIDOS')">PED.</div>
+    <div onclick="ir('v4',this,'📦 STOCK')">STK.</div>
+    <div onclick="ir('v5',this,'💸 GASTOS')">GAS.</div>
+    <div onclick="ir('v6',this,'💰 CAJA')">CAJA</div>
+    <div onclick="ir('v7',this,'📜 HISTORIAL')">HIST.</div>
+    <div onclick="ir('v8',this,'⚙️ AJUSTES')">AJUS.</div>
 </nav>
+
 <script>
-let db = JSON.parse(localStorage.getItem("db_huevos_gh")) || { p:[], s:{}, i:[] };
-function sv(){ localStorage.setItem("db_huevos_gh", JSON.stringify(db)); rd(); }
-function nv(v,e){
+let db = JSON.parse(localStorage.getItem("db_huevos_ultra")) || { cl:[], p:[], s:{}, i:[], g:[], balEfe:0, balTra:0, cart:[] };
+
+function sv(){ localStorage.setItem("db_huevos_ultra", JSON.stringify(db)); render(); }
+
+function ir(v,e,tit){
     document.querySelectorAll('.sec').forEach(x=>x.style.display="none");
     document.querySelectorAll('.nav div').forEach(x=>x.classList.remove('active'));
-    document.getElementById(v).style.display="block"; e.classList.add('active'); rd();
+    document.getElementById(v).style.display="block"; e.classList.add('active');
+    headerTitle.innerText = tit; render();
 }
-function aP(){
-    let n=pN.value.trim(), c=+pC.value; if(!n||!c) return;
-    db.p.push({n,c}); if(db.s[n]===undefined) db.s[n]=0; pN.value=""; pC.value=""; sv();
+
+function addCli(){
+    if(!cNom.value) return;
+    db.cl.push({id:Date.now(), n:cNom.value, t:cTel.value});
+    cNom.value=""; cTel.value=""; sv();
 }
-function fV(){
-    let c=cli.value.trim(), t=+tot.value, p=prd.value, q=+ct.value;
-    if(!c||!t||!p) return alert("Faltan datos");
-    db.i.unshift({id:Date.now(),c,p,q,t,e:false});
-    cli.value=""; tot.value=""; ct.value=""; sv(); nv('v2', document.querySelectorAll('.nav div')[1]);
+
+function addPrd(){
+    let n=pNom.value.trim();
+    if(!n) return;
+    let index = db.p.findIndex(x=>x.n === n);
+    let data = {n, c:+pCosto.value, min:+pMin.value, pro:+pPro.value, may:+pMay.value};
+    if(index > -1) db.p[index] = data; else { db.p.push(data); db.s[n]=0; }
+    pNom.value=""; pCosto.value=""; pMin.value=""; pPro.value=""; pMay.value=""; sv();
 }
-function en(id){
-    let x=db.i.find(a=>a.id==id); db.s[x.p]=(db.s[x.p]||0)-x.q; x.e=true; sv();
+
+function addCart(q, tipo){
+    let pName = vSelPrd.value;
+    let prd = db.p.find(x=>x.n === pName);
+    if(!prd) return alert("Elegí un producto");
+    let precio = tipo==='Min'? prd.min : tipo==='Pro'? prd.pro : prd.may;
+    db.cart.push({n:pName, q, p:precio}); sv();
 }
-function rd(){
-    prd.innerHTML = db.p.map(p=>`<option value="${p.n}">${p.n}</option>`).join("");
-    lst.innerHTML = db.i.filter(p=>!p.e).map(p=>`<div class="list-item"><b>${p.c}</b><br>${p.p} (${p.q}u) - $${p.t}<br><button class="btn" style="background:var(--success)" onclick="en(${p.id})">ENTREGADO</button></div>`).join("");
-    stk.innerHTML = Object.keys(db.s).map(k=>`<div class="card ${db.s[k]<=3?'low-stock':''}"><b>${k}:</b> ${db.s[k]} maples ${db.s[k]<=3?'<br><small>⚠️ STOCK BAJO</small>':''}</div>`).join("");
-    pL.innerHTML = db.p.map(p=>`<div class="card">${p.n} - $${p.c}</div>`).join("");
+
+function addCartManual(){
+    let pName = vSelPrd.value;
+    let prd = db.p.find(x=>x.n === pName);
+    let q = +vCantManual.value;
+    if(!prd || q<=0) return alert("Completar producto y cantidad");
+    db.cart.push({n:pName, q, p: prd.min * q}); vCantManual.value=""; sv();
 }
-rd();
+
+function confirmarPedido(){
+    if(!vSelCli.value || db.cart.length===0) return alert("Falta cliente o productos");
+    let total = db.cart.reduce((a,b)=>a+b.p, 0);
+    db.i.unshift({id:Date.now(), cli:vSelCli.value, items:[...db.cart], tot:total, pago:vPago.value, ent:false, cob:false});
+    db.cart = []; sv(); alert("Pedido enviado a Pendientes");
+}
+
+function entregar(id){
+    let ped = db.i.find(x=>x.id===id);
+    ped.items.forEach(it => { db.s[it.n] -= it.q; });
+    ped.ent = true; sv();
+}
+
+function cobrar(id){
+    let ped = db.i.find(x=>x.id===id);
+    if(ped.pago === "Efectivo") db.balEfe += ped.tot; else db.balTra += ped.tot;
+    ped.cob = true; sv();
+}
+
+function addGasto(){
+    let n=gSelPrd.value, q=+gCant.value, c=+gCosto.value, p=gPago.value;
+    if(!n||!q||!c) return;
+    db.s[n] += q;
+    if(p==="Efectivo") db.balEfe -= c; else db.balTra -= c;
+    db.g.unshift({n,q,c,p,fecha:new Date().toLocaleDateString()});
+    gCant.value=""; gCosto.value=""; sv();
+}
+
+function verUltimaCompra(){
+    let cli = vSelCli.value;
+    let ult = db.i.find(x=>x.cli === cli && x.cob);
+    if(ult) infoUltima.innerHTML = `Última: ${ult.items.map(i=>i.n+"("+i.q+")").join(", ")} ($${ult.tot})`;
+    else infoUltima.innerHTML = "Sin compras previas.";
+}
+
+function exportar(){
+    let txt = JSON.stringify(db);
+    let url = "https://wa.me/?text=" + encodeURIComponent("BACKUP_HUEVOS: " + txt);
+    window.open(url, '_blank');
+}
+
+function importar(){
+    let data = prompt("Pegá acá el código de backup que copiaste de WhatsApp:");
+    if(data && data.includes("BACKUP_HUEVOS: ")){
+        db = JSON.parse(data.replace("BACKUP_HUEVOS: ", ""));
+        sv(); location.reload();
+    }
+}
+
+function render(){
+    // Selectores
+    let pOpts = '<option value="">-- Producto --</option>' + db.p.map(x=>`<option value="${x.n}">${x.n}</option>`).join("");
+    vSelPrd.innerHTML = pOpts; gSelPrd.innerHTML = pOpts; prdStock = pOpts;
+    vSelCli.innerHTML = '<option value="">-- Cliente --</option>' + db.cl.map(x=>`<option value="${x.n}">${x.n}</option>`).join("");
+    
+    // Carrito
+    cartList.innerHTML = db.cart.map((x,i)=>`<div class="cart-item"><span>${x.n} x${x.q}</span><span>$${x.p} <button onclick="db.cart.splice(${i},1);sv()">X</button></span></div>`).join("");
+    cartTotal.innerText = "Total: $" + db.cart.reduce((a,b)=>a+b.p, 0);
+
+    // Listados
+    listCli.innerHTML = db.cl.map(x=>`<div class="card"><b>${x.n}</b><br>${x.t}</div>`).join("");
+    listPrd.innerHTML = db.p.map(x=>`<div class="card"><b>${x.n}</b><br>Costo:$${x.c} | Min:$${x.min} | Pro:$${x.pro} | May:$${x.may}</div>`).join("");
+    
+    listPed.innerHTML = db.i.filter(x=>!x.cob || !x.ent).map(x=>`
+        <div class="list-item">
+            <b>${x.cli}</b> [${x.pago}] <br> ${x.items.map(i=>i.n+"("+i.q+")").join(", ")} <br> <b>Total: $${x.tot}</b> <br>
+            <button class="btn btn-sm" style="background:${x.ent?'#bdc3c7':"var(--blue)"}" onclick="entregar(${x.id})">${x.ent?'ENTREGADO':'MARCAR ENTREGADO'}</button>
+            <button class="btn btn-sm" style="background:${x.cob?'#bdc3c7':"var(--success)"}" onclick="cobrar(${x.id})">${x.cob?'COBRADO':'MARCAR COBRADO'}</button>
+        </div>`).join("");
+
+    listStk.innerHTML = Object.keys(db.s).map(k=>`<div class="card ${db.s[k]<=3?'low-stock':''}"><b>${k}:</b> ${db.s[k]} u. ${db.s[k]<=3?'<br>⚠️ REPOSICIÓN':''}</div>`).join("");
+    listGas.innerHTML = db.g.map(x=>`<div class="hist-item">${x.fecha} - Compra ${x.n} x${x.q} ($${x.c}) [${x.p}]</div>`).join("");
+    listHist.innerHTML = db.i.filter(x=>x.cob && x.ent).map(x=>`<div class="hist-item"><b>${x.cli}:</b> $${x.tot} (${x.items.map(i=>i.n).join(", ")})</div>`).join("");
+    
+    cEfe.innerText = "$"+db.balEfe; cTra.innerText = "$"+db.balTra; cTotal.innerText = "$"+(db.balEfe + db.balTra);
+}
+render();
 </script>
 </body>
 </html>
